@@ -2,13 +2,24 @@ let isMouseDown = false;
 let isAnimating = false;
 let animationSpeed = 100;
 
+
+/*
+Magenta.js has 2 models we can use: 
+  - an RNN (recurrent neural network)
+  - a VAE (variational autoencoder)
+They both generate sequences of music based on an input,
+but in slightly different ways.
+*/
+let useRNN = false;
+let forceInputToDrums = true;
+
 const noiseyMakey = new NoiseyMakey();
 const board = new Board();
 
 // The RNN is a recurrent neural network:
 // We use it to give it an initial sequence of music, and 
 // it continues playing to match that!
-let rnn;
+let model;
 
 init();
 
@@ -37,21 +48,42 @@ function init() {
     animationSpeed = parseInt(event.target.value);
     updateLocation();
   });
+  document.getElementById('radioRnn').addEventListener('click', (event) => {
+    useRNN = event.target.checked;
+    document.getElementById('modelName').value = 'drum_kit_rnn'; 
+    document.getElementById('radioForceDrumNo').click();
+  });
+  document.getElementById('radioVae').addEventListener('click', (event) => {
+    useRNN = !event.target.checked;
+    document.getElementById('modelName').value =  'drums_2bar_lokl_small';
+    document.getElementById('radioForceDrumYes').click();
+  });
+  document.getElementById('radioForceDrumYes').addEventListener('click', (event) => {
+    forceInputToDrums = event.target.checked;
+  });
+  document.getElementById('radioForceDrumNo').addEventListener('click', (event) => {
+    forceInputToDrums = !event.target.checked;
+  });
+  
   
   // Secret keys! (not so secret)
   document.body.addEventListener('keypress', (event) => {
-    if (event.keyCode == 115) { // s
-      playSynth();
-      event.preventDefault();
-    } else if (event.keyCode == 100) { // d
-      playDrums();
-      event.preventDefault();
-    } else if (event.keyCode == 112) { // p
-      playOrPause();
-      event.preventDefault();
-    }else if (event.keyCode == 105) { // i
-      autoDrums();
-      event.preventDefault();
+    switch(event.keyCode) {
+      case 115: // s
+        playSynth();
+        break;
+      case 100: // d
+        playDrums();
+        break;
+      case 112:  // p
+        playOrPause();
+        break;
+      case 105:  // i
+        autoDrums();
+        break;
+      case 109:  // m
+        showSettings();
+        break;
     }
   });
 }
@@ -165,8 +197,17 @@ function playDrums() {
 }
 
 function showHelp() {
-  const helpBox = document.getElementById('help');
-  helpBox.hidden = !helpBox.hidden;
+  const box = document.getElementById('help');
+  box.hidden = !box.hidden;
+}
+
+function showSettings() {
+  const box = document.getElementById('settings');
+  // If we're closing this, also re-initialize the model if needed
+  if (!box.hidden) {
+    loadModel();
+  }
+  box.hidden = !box.hidden;
 }
 
 function autoDrums() {
@@ -174,33 +215,58 @@ function autoDrums() {
 
   // Load the magenta model if we haven't already.
   if (btn.hasAttribute('not-loaded')) {
-    loadRNN();
+    loadModel();
   } else {
     btn.setAttribute('disabled', true);
     
     // Don't block the UI thread while this is happening.
     setTimeout(() => {
-      const sequence = board.getSynthSequence(); 
-      // High temperature to get interesting beats!
-      const dreamSequence = rnn.continueSequence(sequence, 16, 1.3).then((dream) => {
-        board.drawDreamSequence(dream, sequence);
+      if (useRNN) {
+        const sequence = board.getSynthSequence(forceInputToDrums); 
         
-        updateLocation();
-        btn.removeAttribute('disabled');
-      });
+        // High temperature to get interesting beats!
+        model.continueSequence(sequence, 16, 1.3).then((dream) => {
+          board.drawDreamSequence(dream, sequence);
+          updateLocation();
+          btn.removeAttribute('disabled');
+        });
+      } else {
+        const sequence = board.getSynthSequence(forceInputToDrums);
+        
+        // TODO: use async/await here omg.
+        model.encode([sequence]).then((encoded) => {
+          model.decode(encoded).then((decoded) => {
+            board.drawDreamSequence(decoded[0], sequence);
+            
+            updateLocation();
+            btn.removeAttribute('disabled');
+          });
+        });
+        
+        // Example: This generates a random sequence all the time:
+        // model.sample(1).then((dreams) => {...});
+      }
     });
   }
 }
 
-function loadRNN() {
+function loadModel() {
   const btn = document.getElementById('btnAuto');
   btn.textContent = 'Loading...';
   btn.setAttribute('disabled', true);
-  rnn = new mm.MusicRNN(
-    'https://storage.googleapis.com/download.magenta.tensorflow.org/tfjs_checkpoints/music_rnn/drum_kit_rnn'
-  );
+  
+  const name = document.getElementById('modelName').value.trim();
+  const root = useRNN ? 'music_rnn' : 'music_vae';
+
+  const url = 
+      `https://storage.googleapis.com/magentadata/js/checkpoints/${root}/${name}`;
+  
+  if (!model || model.checkpointURL != url) {
+    model = useRNN ? new mm.MusicRNN(url) : new mm.MusicVAE(url);
+  }
+  
   Promise.all([
-    rnn.initialize()
+    model.initialize()
   ]).then(([vars]) => {
     const btn = document.getElementById('btnAuto');
     btn.removeAttribute('not-loaded');
