@@ -1,37 +1,19 @@
-Welcome to Glitch
+tenori-off
 =================
+## What is this?
 
-Click `Show` in the header to see your app live. Updates to your code will instantly deploy and update live.
+A ✨[Tenori-on](https://en.wikipedia.org/wiki/Tenori-on)✨ is a dope electronic music
+instrument sequencer thingie that Yamaha made for a hot minute.  
+I love pixels and patterns and generating things out of pixels and patterns, which means
+I LOVE the Tenori-on. Since they're rare and
+mad [expensive](https://reverb.com/item/11642149-yamaha-tenori-on), I've never seen one,
+so I made a JavaScript version of what I think it looks like.
 
-**Glitch** is the friendly community where you'll build the app of your dreams. Glitch lets you instantly create, remix, edit, and host an app, bot or site, and you can invite collaborators or helpers to simultaneously edit code with you.
+You can change between drums or a synth sound (also using the **D** or **S** keys). The URL also holds the state, so you can send it to a pal to have them listen to your masterpiece. If you hit a bug, refreshing usually makes it go away.
 
-Find out more [about Glitch](https://glitch.com/about).
+The **Improvise** button will auto generate drums to match your synth using 
+~*machine learning*~ via [Magenta.js](https://magenta.tensorflow.org/js) and a recurrent neural network. In the browser!!
 
+### Ok, go make fun shit now!
 
-Your Project
-------------
-
-### ← README.md
-
-That's this file, where you can tell people what your cool website does and how you built it.
-
-### ← index.html
-
-Where you'll write the content of your website. 
-
-### ← style.css
-
-CSS files add styling rules to your content.
-
-### ← script.js
-
-If you're feeling fancy you can add interactivity to your site with JavaScript.
-
-### ← assets
-
-Drag in `assets`, like images or music, to add them to your project
-
-Made by [Glitch](https://glitch.com/)
--------------------
-
-\ ゜o゜)ノ
+![gif](https://user-images.githubusercontent.com/1369170/41994031-05b13eea-7a02-11e8-9948-077a0a56b038.gif)
